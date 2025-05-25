@@ -39,14 +39,14 @@ public class CalificacionesServlet extends HttpServlet {
 
         for (Calificaciones c : lista) {
             arrayBuilder.add(Json.createObjectBuilder()
-                .add("id", c.getId())
-                .add("nota", c.getNota().toString())
-                .add("observaciones", c.getObservaciones() != null ? c.getObservaciones() : "")
-                .add("fechaRegistro", sdf.format(c.getFechaRegistro()))
-                .add("idMatricula", c.getMatriculas().getId()));
+                    .add("id", c.getId())
+                    .add("nota", c.getNota().toString())
+                    .add("observaciones", c.getObservaciones() != null ? c.getObservaciones() : "")
+                    .add("fechaRegistro", sdf.format(c.getFechaRegistro()))
+                    .add("idMatricula", c.getMatriculas().getId()));
         }
 
-        try (JsonWriter writer = Json.createWriter(res.getWriter())) {
+        try ( JsonWriter writer = Json.createWriter(res.getWriter())) {
             writer.writeArray(arrayBuilder.build());
         }
     }
@@ -55,7 +55,7 @@ public class CalificacionesServlet extends HttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse res) throws IOException {
         res.setContentType("application/json; charset=UTF-8");
 
-        try (JsonReader reader = Json.createReader(req.getInputStream())) {
+        try ( JsonReader reader = Json.createReader(req.getInputStream())) {
             JsonObject json = reader.readObject();
 
             BigDecimal nota = new BigDecimal(json.getString("nota"));
@@ -75,10 +75,10 @@ public class CalificacionesServlet extends HttpServlet {
 
             res.setStatus(HttpServletResponse.SC_CREATED);
             JsonObject respuesta = Json.createObjectBuilder()
-                .add("id", cal.getId())
-                .build();
+                    .add("id", cal.getId())
+                    .build();
 
-            try (JsonWriter writer = Json.createWriter(res.getWriter())) {
+            try ( JsonWriter writer = Json.createWriter(res.getWriter())) {
                 writer.writeObject(respuesta);
             }
         } catch (Exception e) {
@@ -91,7 +91,7 @@ public class CalificacionesServlet extends HttpServlet {
     protected void doPut(HttpServletRequest req, HttpServletResponse res) throws IOException {
         res.setContentType("application/json; charset=UTF-8");
 
-        try (JsonReader reader = Json.createReader(req.getInputStream())) {
+        try ( JsonReader reader = Json.createReader(req.getInputStream())) {
             JsonObject json = reader.readObject();
 
             int id = json.getInt("id");
@@ -113,10 +113,10 @@ public class CalificacionesServlet extends HttpServlet {
             controller.edit(cal);
 
             JsonObject respuesta = Json.createObjectBuilder()
-                .add("id", cal.getId())
-                .build();
+                    .add("id", cal.getId())
+                    .build();
 
-            try (JsonWriter writer = Json.createWriter(res.getWriter())) {
+            try ( JsonWriter writer = Json.createWriter(res.getWriter())) {
                 writer.writeObject(respuesta);
             }
         } catch (Exception e) {
