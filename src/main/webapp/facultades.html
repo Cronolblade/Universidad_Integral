@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <title>Gestión de Facultades</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+</head>
+<body class="bg-light">
+<div class="container mt-4">
+    <h1 class="mb-4">Gestión de Facultades</h1>
+
+    <form id="facultadForm" class="row g-3 needs-validation" novalidate>
+        <input type="hidden" id="id" />
+        <div class="col-md-8">
+            <label for="nombre" class="form-label">Nombre de la Facultad</label>
+            <input type="text" class="form-control" id="nombre" required minlength="1" maxlength="100" />
+            <div class="invalid-feedback">El nombre es obligatorio y debe tener entre 1 y 100 caracteres.</div>
+        </div>
+        <div class="col-md-4 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary" id="submitBtn">Guardar</button>
+            <button type="button" class="btn btn-secondary ms-2" id="cancelBtn" style="display:none;">Cancelar</button>
+        </div>
+    </form>
+
+    <hr />
+
+    <table class="table table-bordered table-striped mt-4">
+        <thead class="table-dark">
+        <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Acciones</th>
+        </tr>
+        </thead>
+        <tbody id="facultadTable"></tbody>
+    </table>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        fetchFacultades();
+
+        const form = document.getElementById("facultadForm");
+        const nombreInput = document.getElementById("nombre");
+        const idInput = document.getElementById("id");
+        const submitBtn = document.getElementById("submitBtn");
+        const cancelBtn = document.getElementById("cancelBtn");
+
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            if (!form.checkValidity()) {
+                e.stopPropagation();
+                form.classList.add("was-validated");
+                return;
+            }
+
+            const data = {
+                nombre: nombreInput.value.trim()
+            };
+
+            if (idInput.value) {
+                data.id = parseInt(idInput.value);
+                await putFacultad(data);
+            } else {
+                await postFacultad(data);
+            }
+
+            resetForm();
+            fetchFacultades();
+        });
+
+        cancelBtn.addEventListener("click", () => {
+            resetForm();
+        });
+
+        async function fetchFacultades() {
+            try {
+                const res = await fetch("facultades");
+                if (!res.ok) throw new Error("Error al obtener datos");
+                const data = await res.json();
+                const tbody = document.getElementById("facultadTable");
+                tbody.innerHTML = "";
+
+                data.forEach(f => {
+                    tbody.innerHTML += `
+                    <tr>
+                        <td>${f.id}</td>
+                        <td>${escapeHtml(f.nombre)}</td>
+                        <td>
+                            <button class="btn btn-warning btn-sm" onclick='editFacultad(${f.id}, "${escapeJs(f.nombre)}")'>Editar</button>
+                            <button class="btn btn-danger btn-sm" onclick='deleteFacultad(${f.id})'>Eliminar</button>
+                        </td>
+                    </tr>`;
+                });
+            } catch (error) {
+                alert("No se pudieron cargar las facultades.");
+            }
+        }
+
+        async function postFacultad(data) {
+            try {
+                const res = await fetch("facultades", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify(data)
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    alert("Error: " + (err.error || "No se pudo crear la facultad."));
+                }
+            } catch (error) {
+                alert("Error en la petición POST");
+            }
+        }
+
+        async function putFacultad(data) {
+            try {
+                const res = await fetch("facultades", {
+                    method: "PUT",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify(data)
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    alert("Error: " + (err.error || "No se pudo actualizar la facultad."));
+                }
+            } catch (error) {
+                alert("Error en la petición PUT");
+            }
+        }
+
+        async function deleteFacultad(id) {
+            if (!confirm("¿Seguro que deseas eliminar esta facultad?")) return;
+            try {
+                const res = await fetch(`facultades?id=${id}`, {method: "DELETE"});
+                if (!res.ok) {
+                    const err = await res.json();
+                    alert("Error: " + (err.error || "No se pudo eliminar la facultad."));
+                } else {
+                    fetchFacultades();
+                }
+            } catch (error) {
+                alert("Error en la petición DELETE");
+            }
+        }
+
+        window.editFacultad = function(id, nombre) {
+            idInput.value = id;
+            nombreInput.value = nombre;
+            submitBtn.textContent = "Actualizar";
+            cancelBtn.style.display = "inline-block";
+        }
+
+        function resetForm() {
+            idInput.value = "";
+            nombreInput.value = "";
+            submitBtn.textContent = "Guardar";
+            cancelBtn.style.display = "none";
+            form.classList.remove("was-validated");
+        }
+
+        // Sanitización básica
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+
+        function escapeJs(text) {
+            return text.replace(/'/g, "\\'").replace(/"/g, '\\"');
+        }
+    });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
