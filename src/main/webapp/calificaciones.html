@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <title>Calificaciones</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    </head>
+    <body class="bg-light p-4">
+
+        <div class="container">
+            <h2 class="mb-4">Gestión de Calificaciones</h2>
+
+            <form id="calificacionForm" class="mb-4">
+                <input type="hidden" id="id">
+                <div class="row g-2">
+                    <div class="col-md-2"><input type="text" id="nota" class="form-control" placeholder="Nota" required></div>
+                    <div class="col-md-3"><input type="text" id="observaciones" class="form-control" placeholder="Observaciones"></div>
+                    <div class="col-md-3"><input type="date" id="fechaRegistro" class="form-control" required></div>
+                    <div class="col-md-2"><input type="number" id="idMatricula" class="form-control" placeholder="ID Matrícula" required></div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary w-100">Guardar</button>
+                    </div>
+                </div>
+            </form>
+
+            <table class="table table-bordered table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID</th><th>Nota</th><th>Observaciones</th><th>Fecha</th><th>Matrícula</th><th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaCalificaciones"></tbody>
+            </table>
+        </div>
+
+        <script>
+            const url = 'calificaciones';
+
+            document.addEventListener('DOMContentLoaded', () => {
+                obtenerCalificaciones();
+
+                document.getElementById('calificacionForm').addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const id = document.getElementById('id').value;
+
+                    if (id) {
+                        await actualizarCalificacion(id);
+                    } else {
+                        await crearCalificacion();
+                    }
+
+                    document.getElementById('calificacionForm').reset();
+                    obtenerCalificaciones();
+                });
+            });
+
+            async function obtenerCalificaciones() {
+                const res = await fetch(url);
+                const datos = await res.json();
+                const tbody = document.getElementById('tablaCalificaciones');
+                tbody.innerHTML = '';
+
+                datos.forEach(cal => {
+                    tbody.innerHTML += `
+                <tr>
+                    <td>${cal.id}</td>
+                    <td>${cal.nota}</td>
+                    <td>${cal.observaciones}</td>
+                    <td>${cal.fechaRegistro}</td>
+                    <td>${cal.idMatricula}</td>
+                    <td>
+                        <button class="btn btn-warning btn-sm" onclick="editar(${JSON.stringify(cal).replace(/"/g, '&quot;')})">Editar</button>
+                        <button class="btn btn-danger btn-sm" onclick="eliminar(${cal.id})">Eliminar</button>
+                    </td>
+                </tr>
+            `;
+                });
+            }
+
+            function editar(cal) {
+                document.getElementById('id').value = cal.id;
+                document.getElementById('nota').value = cal.nota;
+                document.getElementById('observaciones').value = cal.observaciones;
+                document.getElementById('fechaRegistro').value = cal.fechaRegistro;
+                document.getElementById('idMatricula').value = cal.idMatricula;
+            }
+
+            async function crearCalificacion() {
+                const data = recolectarDatos();
+                await fetch(url, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json;charset=UTF-8'},
+                    body: JSON.stringify(data)
+                });
+            }
+
+            async function actualizarCalificacion(id) {
+                const data = recolectarDatos();
+                data.id = parseInt(id);
+                await fetch(url, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json;charset=UTF-8'},
+                    body: JSON.stringify(data)
+                });
+            }
+
+            async function eliminar(id) {
+                if (!confirm("¿Deseas eliminar esta calificación?"))
+                    return;
+                await fetch(`${url}?id=${id}`, {method: 'DELETE'});
+                obtenerCalificaciones();
+            }
+
+            function recolectarDatos() {
+                return {
+                    nota: document.getElementById('nota').value,
+                    observaciones: document.getElementById('observaciones').value,
+                    fechaRegistro: document.getElementById('fechaRegistro').value,
+                    idMatricula: parseInt(document.getElementById('idMatricula').value)
+                };
+            }
+        </script>
+    </body>
+</html>
