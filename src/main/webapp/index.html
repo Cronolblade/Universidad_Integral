@@ -1,10 +1,180 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
     <head>
-        <title>Start Page</title>
-        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <meta charset="UTF-8">
+        <title>Gestión de Estudiantes</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     </head>
-    <body>
-        <h1>Hello World!</h1>
+    <body class="container mt-5">
+        <h1 class="mb-4">Gestión de Estudiantes</h1>
+
+        <form id="estudianteForm" class="mb-4">
+            <input type="hidden" id="id">
+            <div class="row mb-3">
+                <div class="col">
+                    <label for="dni" class="form-label">DNI</label>
+                    <input type="text" class="form-control" id="dni" required>
+                </div>
+                <div class="col">
+                    <label for="nombre" class="form-label">Nombre</label>
+                    <input type="text" class="form-control" id="nombre" required>
+                </div>
+                <div class="col">
+                    <label for="apellido" class="form-label">Apellido</label>
+                    <input type="text" class="form-control" id="apellido" required>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col">
+                    <label for="correo" class="form-label">Correo</label>
+                    <input type="email" class="form-control" id="correo" required>
+                </div>
+                <div class="col">
+                    <label for="genero" class="form-label">Género</label>
+                    <select class="form-select" id="genero" required>
+                        <option value="">Seleccione</option>
+                        <option value="M">Masculino</option>
+                        <option value="F">Femenino</option>
+                    </select>
+                </div>
+                <div class="col">
+                    <label for="fechaNacimiento" class="form-label">Fecha de Nacimiento</label>
+                    <input type="date" class="form-control" id="fechaNacimiento" required>
+                </div>
+                <div class="col">
+                    <label for="idCarrera" class="form-label">ID Carrera</label>
+                    <input type="number" class="form-control" id="idCarrera" required>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Guardar</button>
+            <button type="reset" class="btn btn-secondary">Limpiar</button>
+        </form>
+
+        <table class="table table-bordered">
+            <thead class="table-dark">
+                <tr>
+                    <th>DNI</th>
+                    <th>Nombre</th>
+                    <th>Apellido</th>
+                    <th>Correo</th>
+                    <th>Género</th>
+                    <th>Fecha Nacimiento</th>
+                    <th>ID Carrera</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="tablaEstudiantes">
+                <!-- Datos se cargarán aquí -->
+            </tbody>
+        </table>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                cargarEstudiantes();
+
+                document.getElementById('estudianteForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const id = document.getElementById('id').value;
+                    if (id) {
+                        actualizarEstudiante();
+                    } else {
+                        crearEstudiante();
+                    }
+                });
+            });
+
+            function cargarEstudiantes() {
+                fetch('estudiantes')
+                        .then(res => res.json())
+                        .then(data => {
+                            const tabla = document.getElementById('tablaEstudiantes');
+                            tabla.innerHTML = '';
+                            data.forEach(est => {
+                                const fila = document.createElement('tr');
+                                fila.innerHTML = `
+                        <td>${est.dni}</td>
+                        <td>${est.nombre}</td>
+                        <td>${est.apellido}</td>
+                        <td>${est.correo}</td>
+                        <td>${est.genero}</td>
+                        <td>${est.fechaNacimiento}</td>
+                        <td>${est.idCarrera}</td>
+                        <td>
+                            <button class="btn btn-sm btn-warning me-1" onclick='editarEstudiante(${JSON.stringify(est)})'>Editar</button>
+                            <button class="btn btn-sm btn-danger" onclick="eliminarEstudiante(${est.id})">Eliminar</button>
+                        </td>
+                    `;
+                                tabla.appendChild(fila);
+                            });
+                        });
+            }
+
+            function crearEstudiante() {
+                const estudiante = obtenerDatosFormulario();
+                fetch('estudiantes', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(estudiante)
+                })
+                        .then(res => res.json())
+                        .then(() => {
+                            document.getElementById('estudianteForm').reset();
+                            cargarEstudiantes();
+                        });
+            }
+
+            function actualizarEstudiante() {
+                const estudiante = obtenerDatosFormulario();
+                estudiante.id = parseInt(document.getElementById('id').value);
+                fetch('estudiantes', {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(estudiante)
+                })
+                        .then(res => res.json())
+                        .then(() => {
+                            document.getElementById('estudianteForm').reset();
+                            cargarEstudiantes();
+                        });
+            }
+
+            function eliminarEstudiante(id) {
+                if (!confirm("¿Seguro que deseas eliminar este estudiante?"))
+                    return;
+
+                fetch('estudiantes', {
+                    method: 'DELETE',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({id})
+                })
+                        .then(res => res.json())
+                        .then(() => {
+                            cargarEstudiantes();
+                        });
+            }
+
+            function editarEstudiante(est) {
+                document.getElementById('id').value = est.id;
+                document.getElementById('dni').value = est.dni;
+                document.getElementById('nombre').value = est.nombre;
+                document.getElementById('apellido').value = est.apellido;
+                document.getElementById('correo').value = est.correo;
+                document.getElementById('genero').value = est.genero;
+                document.getElementById('fechaNacimiento').value = est.fechaNacimiento;
+                document.getElementById('idCarrera').value = est.idCarrera;
+            }
+
+            function obtenerDatosFormulario() {
+                return {
+                    dni: document.getElementById('dni').value,
+                    nombre: document.getElementById('nombre').value,
+                    apellido: document.getElementById('apellido').value,
+                    correo: document.getElementById('correo').value,
+                    genero: document.getElementById('genero').value,
+                    fechaNacimiento: document.getElementById('fechaNacimiento').value,
+                    idCarrera: parseInt(document.getElementById('idCarrera').value)
+                };
+            }
+        </script>
     </body>
 </html>
